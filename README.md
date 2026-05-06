@@ -1,5 +1,16 @@
 # Stock Market Data Pipeline
 
+![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.6-231F20?style=flat-square&logo=apachekafka&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.4-E25A1C?style=flat-square&logo=apachespark&logoColor=white)
+![Apache Airflow](https://img.shields.io/badge/Apache%20Airflow-2.8-017CEE?style=flat-square&logo=apacheairflow&logoColor=white)
+![Snowflake](https://img.shields.io/badge/Snowflake-29B5E8?style=flat-square&logo=snowflake&logoColor=white)
+![MinIO](https://img.shields.io/badge/MinIO-C72E49?style=flat-square&logo=minio&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![AlphaVantage](https://img.shields.io/badge/AlphaVantage-API-00C853?style=flat-square&logoColor=white)
+![Zookeeper](https://img.shields.io/badge/Apache%20Zookeeper-3.8-E95420?style=flat-square&logo=apache&logoColor=white)
+![Parquet](https://img.shields.io/badge/Apache%20Parquet-50ABF1?style=flat-square&logo=apacheparquet&logoColor=white)
+
 > A production-grade, end-to-end data engineering pipeline that ingests real-time and historical stock market data via AlphaVantage, processes it through dual batch and streaming architectures using Apache Kafka, Apache Spark, and Apache Airflow, stores raw and processed data in MinIO (S3-compatible object storage), and loads daily stock metrics into Snowflake using incremental MERGE upserts — all containerised with Docker Compose.
 
 ---
@@ -26,8 +37,8 @@
 
 This project simulates a real-world financial data engineering platform. It ingests stock market data for 10 major equities (AAPL, MSFT, GOOGL, AMZN, META, TSLA, NVDA, INTC, JPM, V) and runs two independent pipelines in parallel:
 
-- **Batch pipeline** — fetches historical daily OHLCV (Open, High, Low, Close, Volume) candles once per day via Airflow, processes them with Spark, and upserts the results into Snowflake for historical analysis.
-- **Streaming pipeline** — continuously polls live price quotes, buffers them through Kafka, and computes rolling 15-minute and 1-hour moving averages using Spark Structured Streaming — serving as a real-time monitoring layer.
+- **Batch pipeline** - fetches historical daily OHLCV (Open, High, Low, Close, Volume) candles once per day via Airflow, processes them with Spark, and upserts the results into Snowflake for historical analysis.
+- **Streaming pipeline** - continuously polls live price quotes, buffers them through Kafka, and computes rolling 15-minute and 1-hour moving averages using Spark Structured Streaming - serving as a real-time monitoring layer.
 
 The entire stack runs locally via Docker Compose, making it reproducible on any machine without cloud infrastructure.
 
@@ -35,23 +46,23 @@ The entire stack runs locally via Docker Compose, making it reproducible on any 
 
 ## Architecture
 
-![Architecture Diagram](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/stock_market_pipeline_architecture.svg)
+![Architecture Diagram](img/stock_market_pipeline_architecture.svg)
 
 ### Why this architecture?
 
-**AlphaVantage as the data source** replaces the original random price simulator with real market data. The free tier (25 calls/day, 5 calls/minute) is respected via deliberate rate-limiting built into both producers — 12-second delays between API calls for the batch producer, and ~8-hour gaps between polling cycles for the stream producer.
+**AlphaVantage as the data source** replaces the original random price simulator with real market data. The free tier (25 calls/day, 5 calls/minute) is respected via deliberate rate-limiting built into both producers - 12-second delays between API calls for the batch producer, and ~8-hour gaps between polling cycles for the stream producer.
 
-**Kafka as the middle layer** decouples producers from consumers entirely. If the consumer crashes mid-run, it replays from its last committed Kafka offset — no data is lost and the AlphaVantage API is never called twice. This is the fundamental reason for Kafka's presence: fault tolerance and replay.
+**Kafka as the middle layer** decouples producers from consumers entirely. If the consumer crashes mid-run, it replays from its last committed Kafka offset - no data is lost and the AlphaVantage API is never called twice. This is the fundamental reason for Kafka's presence: fault tolerance and replay.
 
 **Two separate Kafka topics** (`stock-market-batch` and `stock-market-realtime`) allow the batch and streaming pipelines to evolve independently with different consumer group configurations, retention policies, and processing semantics.
 
-**MinIO as S3-compatible object storage** gives the pipeline a local data lake without requiring AWS credentials. It stores raw CSVs written by consumers and processed Parquet files written by Spark — two distinct layers with a clean separation.
+**MinIO as S3-compatible object storage** gives the pipeline a local data lake without requiring AWS credentials. It stores raw CSVs written by consumers and processed Parquet files written by Spark - two distinct layers with a clean separation.
 
 **Spark for both batch and streaming** means a single processing engine handles both workloads. The batch processor computes daily OHLCV metrics; the stream processor computes sliding-window moving averages. Using Spark for both avoids introducing a second processing framework.
 
 **Airflow for orchestration** manages the batch pipeline as a DAG with five sequential tasks and a daily schedule. The streaming pipeline runs as a long-lived independent process outside Airflow since streaming jobs are not suited to task-based DAG execution.
 
-**Snowflake as the warehouse** receives clean, deduplicated daily metrics via a MERGE upsert strategy — so re-running the pipeline for the same date updates existing rows rather than inserting duplicates.
+**Snowflake as the warehouse** receives clean, deduplicated daily metrics via a MERGE upsert strategy - so re-running the pipeline for the same date updates existing rows rather than inserting duplicates.
 
 ---
 
@@ -96,7 +107,7 @@ STOCKMARKET_DATAPIPELINE/
 │
 ├── docker-compose.yaml
 ├── requirements.txt
-├── .env.example
+├── .env
 └── README.md
 ```
 
@@ -119,14 +130,14 @@ STOCKMARKET_DATAPIPELINE/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/stockmarket-datapipeline.git
-cd stockmarket-datapipeline
+git clone https://github.com/PrasunDutta007/Stock-Market-Datapipeline.git
+cd Stock-Market-Datapipeline
 ```
 
-### 2. Configure environment variables
+### 2. Create & configure environment variables
 
 ```bash
-cp .env.example .env
+touch .env
 ```
 
 Open `.env` and fill in your credentials:
@@ -135,14 +146,29 @@ Open `.env` and fill in your credentials:
 # AlphaVantage — get a free key at https://www.alphavantage.co/support/#api-key
 ALPHA_VANTAGE_API_KEY=your_key_here
 
+# Kafka
+KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
+KAFKA_TOPIC_REALTIME="stock-market-realtime"
+KAFKA_TOPIC_BATCH="stock-market-batch"
+KAFKA_GROUP_ID="stock-market-consumer-group"
+KAFKA_GROUP_BATCH_ID="stock-market-batch-consumer-group"
+KAFKA_GROUP_REALTIME_ID="stock-market-realtime-consumer-group"
+
 # MinIO (default credentials work out of the box)
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
+MINIO_ACCESS_KEY="minioadmin"
+MINIO_SECRET_KEY="minioadmin"
+MINIO_BUCKET="stock-market-data"
+MINIO_ENDPOINT="localhost:9000"
+MINIO_CONNECTION="http://minio:9000"
 
 # Snowflake
 SNOWFLAKE_ACCOUNT=your_account_id
 SNOWFLAKE_USER=your_username
 SNOWFLAKE_PASSWORD=your_password
+SNOWFLAKE_DATABASE="STOCKMARKETBATCH"
+SNOWFLAKE_SCHEMA="PUBLIC"
+SNOWFLAKE_WAREHOUSE="COMPUTE_WH"
+SNOWFLAKE_TABLE="DAILY_STOCK_METRICS"
 ```
 
 ### 3. Start the stack
@@ -174,7 +200,7 @@ stock-market-batch
 stock-market-realtime
 ```
 
-![Kafka Topics](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/stock_market_batch_consumer.png)
+![Kafka Topics](img/stock_market_batch_consumer.png)
 
 ### 6. Copy scripts into Airflow DAGs folder
 
@@ -236,9 +262,9 @@ python realtime_data_consumer.py
 
 ---
 
-### 1. Kafka — Ingestion Layer
+### 1. Kafka - Ingestion Layer
 
-Kafka acts as the fault-tolerant message bus between data producers (AlphaVantage API callers) and data consumers (MinIO writers). If a consumer crashes, it replays from its last committed offset — no data is lost and no API call is repeated.
+Kafka acts as the fault-tolerant message bus between data producers (AlphaVantage API callers) and data consumers (MinIO writers). If a consumer crashes, it replays from its last committed offset - no data is lost and no API call is repeated.
 
 #### `batch_data_producer.py`
 
@@ -257,9 +283,9 @@ if i < len(STOCKS) - 1:
     time.sleep(API_CALL_DELAY_SECONDS)
 ```
 
-![Batch Producer Starting](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/batch_data_producer.png)
+![Batch Producer Starting](img/batch_data_producer.png)
 
-![Batch Producer Complete — 10 stocks, 251 records produced](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/batch_data_producer-1.png)
+![Batch Producer Complete — 10 stocks, 251 records produced](img/batch_data_producer-1.png)
 
 ---
 
@@ -277,9 +303,8 @@ CYCLES_PER_DAY = 3
 CYCLE_INTERVAL_SECONDS = 86_400 // CYCLES_PER_DAY   # ~8 hours
 ```
 
-![Realtime stream data flowing through Kafka](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/data_streaming_realtime.gif)
+![Realtime stream data flowing through Kafka](img/data_streaming_realtime.gif)
 
-![Kafka realtime topic — live price snapshots](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/stock_market_batch_consumer.png)
 
 ---
 
@@ -289,14 +314,14 @@ Reads from `stock-market-batch`, writes each message as a partitioned CSV to Min
 
 **Key design decisions:**
 - **Idle timeout exit** (`IDLE_TIMEOUT_SECONDS = 30`): exits after 30 seconds of no new messages so the Airflow BashOperator task can complete. Without this, the DAG hangs forever.
-- **Manual offset commit**: `enable.auto.commit: False` with explicit `consumer.commit()` after each successful MinIO write — ensures no message is marked as consumed unless it is safely stored.
-- **Safe temp file cleanup**: `csv_file.unlink()` runs in a `finally` block, separate from the commit — a failed cleanup cannot prevent the offset from being committed.
+- **Manual offset commit**: `enable.auto.commit: False` with explicit `consumer.commit()` after each successful MinIO write - ensures no message is marked as consumed unless it is safely stored.
+- **Safe temp file cleanup**: `csv_file.unlink()` runs in a `finally` block, separate from the commit - a failed cleanup cannot prevent the offset from being committed.
 
 ```
 MinIO path: raw/historical/year=YYYY/month=MM/day=DD/{SYMBOL}_{timestamp}.csv
 ```
 
-![Consumer reading from Kafka and writing to MinIO](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/consumer_1.png)
+![Consumer reading from Kafka and writing to MinIO](img/consumer_1.png)
 
 ---
 
@@ -317,7 +342,7 @@ MinIO path: raw/realtime/year=YYYY/month=MM/day=DD/hour=HH/stock_data_{timestamp
 
 ---
 
-### 2. Spark — Processing Layer
+### 2. Spark - Processing Layer
 
 #### `spark_batch_processor.py`
 
@@ -349,19 +374,19 @@ spark_conf.set("fs.s3a.impl",              "org.apache.hadoop.fs.s3a.S3AFileSyst
 
 Without `inferSchema`, Spark reads all columns as strings — unusable for numeric aggregations:
 
-![Without inferSchema — all columns are strings](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/without_inferschema.png)
+![Without inferSchema — all columns are strings](img/without_inferschema.png)
 
 With `inferSchema=True`, Spark correctly infers numeric types — window aggregations work correctly:
 
-![With inferSchema — correct types inferred](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/with_inferschema.png)
+![With inferSchema — correct types inferred](img/with_inferschema.png)
 
 **Processed output — daily OHLCV metrics in Spark:**
 
-![Spark batch metrics output](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/metrics.png)
+![Spark batch metrics output](img/metrics.png)
 
 **Processed Parquet files in MinIO — partitioned by symbol:**
 
-![MinIO processed data — 10 symbol partitions](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/processed_batchdata.png)
+![MinIO processed data — 10 symbol partitions](img/processed_batchdata.png)
 
 ---
 
@@ -398,7 +423,7 @@ checkpoint_path = f"s3a://{MINIO_BUCKET}/checkpoints/streaming_processor"
 
 ---
 
-### 3. Airflow — Orchestration Layer
+### 3. Airflow - Orchestration Layer
 
 #### `stock_market_batch_dag.py`
 
@@ -418,11 +443,11 @@ fetch_historical_data >> consume_historical_data >> process_data >> load_to_snow
 
 **All five tasks succeeding:**
 
-![Airflow DAG — all tasks green](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/dag.png)
+![Airflow DAG — all tasks green](img/dag.png)
 
 **DAG run history and duration:**
 
-![Airflow batch pipeline run summary](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/airflow_batch_processing.gif)
+![Airflow batch pipeline run summary](img/airflow_batch_processing.gif)
 
 **Important DAG configuration:**
 ```python
@@ -438,11 +463,11 @@ dag = DAG(
 )
 ```
 
-`catchup=False` is critical — without it, Airflow would attempt to run the DAG for every day since `start_date`, exhausting the 25 AlphaVantage API calls in the first run.
+`catchup=False` is critical - without it, Airflow would attempt to run the DAG for every day since `start_date`, exhausting the 25 AlphaVantage API calls in the first run.
 
 ---
 
-### 4. Snowflake — Warehouse Layer
+### 4. Snowflake - Warehouse Layer
 
 #### `load_to_snowflake.py`
 
@@ -476,7 +501,7 @@ df["symbol"] = symbol   # inject back as a column
 
 **Snowflake table — 86 rows of AAPL daily metrics loaded:**
 
-![Snowflake DAILY_STOCK_METRICS table](https://raw.githubusercontent.com/YOUR_GITHUB_USERNAME/img/main/snowflake.png)
+![Snowflake DAILY_STOCK_METRICS table](img/snowflake.png)
 
 **Table schema:**
 ```sql
@@ -502,7 +527,7 @@ A full account of every bug encountered and fixed during development.
 
 ---
 
-### Bug 1 — Duplicate `task_id` in Airflow DAG (DAG fails to load)
+### Bug 1: Duplicate `task_id` in Airflow DAG (DAG fails to load)
 
 **File:** `stock_market_batch_dag.py`
 
@@ -520,7 +545,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 2 — `process_complete` task missing `dag=dag`
+### Bug 2: `process_complete` task missing `dag=dag`
 
 **File:** `stock_market_batch_dag.py`
 
@@ -530,7 +555,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 3 — Batch producer ignores Airflow execution date
+### Bug 3: Batch producer ignores Airflow execution date
 
 **File:** `batch_data_producer.py`
 
@@ -540,7 +565,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 4 — `spark.jar.packages` typo (missing `s`)
+### Bug 4: `spark.jar.packages` typo (missing `s`)
 
 **File:** `spark_batch_processor.py`
 
@@ -548,7 +573,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 5 — Spark write path mismatch with Snowflake loader
+### Bug 5: Spark write path mismatch with Snowflake loader
 
 **File:** `spark_batch_processor.py`
 
@@ -558,7 +583,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 6 — `process_streaming_data(df)` — undefined variable
+### Bug 6: `process_streaming_data(df)` — undefined variable
 
 **File:** `spark_stream_processor.py`
 
@@ -568,7 +593,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 7 — `late_updated` typo in Snowflake loader
+### Bug 7: `late_updated` typo in Snowflake loader
 
 **File:** `load_to_snowflake.py`
 
@@ -576,7 +601,7 @@ consume_historical_data = BashOperator(
 
 ---
 
-### Bug 8 — `last_updated` shows "Invalid date" in Snowflake
+### Bug 8: `last_updated` shows "Invalid date" in Snowflake
 
 **File:** `load_to_snowflake.py`
 
@@ -593,7 +618,7 @@ df_all["last_updated"] = pd.Timestamp.now()
 
 ---
 
-### Bug 9 — Batch consumer hangs forever (DAG never progresses)
+### Bug 9: Batch consumer hangs forever (DAG never progresses)
 
 **File:** `batch_data_consumer.py`
 
@@ -610,7 +635,7 @@ if msg is None:
 
 ---
 
-### Bug 10 — MinIO unreachable inside Docker containers
+### Bug 10: MinIO unreachable inside Docker containers
 
 **Files:** `batch_data_consumer.py`, `realtime_data_consumer.py`, `load_to_snowflake.py`
 
@@ -624,7 +649,7 @@ MINIO_ENDPOINT = _minio_connection.replace("https://", "").replace("http://", ""
 
 ---
 
-### Bug 11 — Kafka offsets never committed → 1000+ duplicate MinIO files
+### Bug 11: Kafka offsets never committed → 1000+ duplicate MinIO files
 
 **File:** `batch_data_consumer.py`, `realtime_data_consumer.py`
 
@@ -642,7 +667,7 @@ docker exec -it kafka kafka-consumer-groups.sh \
 
 ---
 
-### Bug 12 — `ModuleNotFoundError: No module named 'dotenv'` in Spark container
+### Bug 12: `ModuleNotFoundError: No module named 'dotenv'` in Spark container
 
 **File:** `spark_batch_processor.py`
 
@@ -652,7 +677,7 @@ docker exec -it kafka kafka-consumer-groups.sh \
 
 ---
 
-### Bug 13 — Hardcoded credentials in source code
+### Bug 13: Hardcoded credentials in source code
 
 **Files:** `load_to_snowflake.py`, `docker-compose.yaml`
 
@@ -666,7 +691,7 @@ docker exec -it kafka kafka-consumer-groups.sh \
 
 ---
 
-### Bug 14 — `realtime_data_consumer` drops last batch on shutdown
+### Bug 14: `realtime_data_consumer` drops last batch on shutdown
 
 **File:** `realtime_data_consumer.py`
 
@@ -701,10 +726,8 @@ finally:
 
 ---
 
-## License
-
-MIT
+*Built by Prasun Dutta*
 
 ---
 
-*Built by Prasun Jeet Dutta*
+
