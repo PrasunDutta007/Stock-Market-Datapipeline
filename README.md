@@ -46,7 +46,7 @@ The entire stack runs locally via Docker Compose, making it reproducible on any 
 
 ## Architecture
 
-![Architecture Diagram](img/stock_market_pipeline_architecture.svg)
+![Architecture Diagram](img/stockmarket_datapipeline_architecture.png)
 
 ### Why this architecture?
 
