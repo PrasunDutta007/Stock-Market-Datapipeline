@@ -24,10 +24,10 @@
 - [Installation and Setup](#installation-and-setup)
 - [Pipeline Workflow](#pipeline-workflow)
 - [Deep Dive](#deep-dive)
-  - [1. Kafka - Ingestion Layer](#1-kafka--ingestion-layer)
-  - [2. Spark - Processing Layer](#2-spark--processing-layer)
-  - [3. Airflow - Orchestration Layer](#3-airflow--orchestration-layer)
-  - [4. Snowflake - Warehouse Layer](#4-snowflake--warehouse-layer)
+  - [1. Kafka - Ingestion Layer](#1-kafka---ingestion-layer)
+  - [2. Spark - Processing Layer](#2-spark---processing-layer)
+  - [3. Airflow - Orchestration Layer](#3-airflow---orchestration-layer)
+  - [4. Snowflake - Warehouse Layer](#4-snowflake---warehouse-layer)
 - [Key Engineering Decisions](#key-engineering-decisions)
 
 ---
