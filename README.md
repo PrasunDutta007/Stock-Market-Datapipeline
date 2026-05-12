@@ -552,5 +552,8 @@ CREATE TABLE IF NOT EXISTS STOCKMARKETBATCH.PUBLIC.DAILY_STOCK_METRICS (
 </p>
 
 ---
+<p align="center">
+  <sub>Animated icons by <a href="https://www.flaticon.com/free-animated-icons/stock-market" title="stock market animated icons">Stock market animated icons created by Freepik - Flaticon</a></sub>
+</p>
 
 
