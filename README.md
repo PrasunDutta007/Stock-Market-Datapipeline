@@ -1,4 +1,13 @@
-# Stock Market Data Pipeline 💹
+<table border="0" cellspacing="0" cellpadding="10">
+<tr>
+<td><img src="img/stock-market.gif" width="80" height="80"/></td>
+<td>
+
+# Stock Market Data Pipeline 
+
+</td>
+</tr>
+</table>
 
 ![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.6-231F20?style=flat-square&logo=apachekafka&logoColor=white)
