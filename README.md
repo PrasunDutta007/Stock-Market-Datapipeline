@@ -20,7 +20,7 @@
 ![Zookeeper](https://img.shields.io/badge/Apache%20Zookeeper-3.8-E95420?style=flat-square&logo=apache&logoColor=white)
 ![Parquet](https://img.shields.io/badge/Apache%20Parquet-50ABF1?style=flat-square&logo=apacheparquet&logoColor=white)
 
-> A production-grade, end-to-end data engineering pipeline that ingests real-time and historical stock market data via AlphaVantage, processes it through dual batch and streaming architectures using Apache Kafka, Apache Spark, and Apache Airflow, stores raw and processed data in MinIO (S3-compatible object storage), and loads daily stock metrics into Snowflake using incremental MERGE upserts — all containerised with Docker Compose.
+> A production-grade, end-to-end data engineering pipeline that ingests real-time and historical stock market data via AlphaVantage, processes it through dual batch and streaming architectures using Apache Kafka, Apache Spark, and Apache Airflow, stores raw and processed data in MinIO (S3-compatible object storage), and loads daily stock metrics into Snowflake using incremental MERGE upserts - all containerised with Docker Compose.
 
 ---
 
@@ -151,7 +151,7 @@ touch .env
 Open `.env` and fill in your credentials:
 
 ```bash
-# AlphaVantage — get a free key at https://www.alphavantage.co/support/#api-key
+# AlphaVantage - get a free key at https://www.alphavantage.co/support/#api-key
 ALPHA_VANTAGE_API_KEY=your_key_here
 
 # Kafka
@@ -193,7 +193,7 @@ This starts: PostgreSQL, Zookeeper, Kafka, MinIO, Spark (master + worker + clien
 |---|---|---|
 | Airflow UI | http://localhost:8081 | airflow / airflow |
 | MinIO Console | http://localhost:9001 | minioadmin / minioadmin |
-| Spark Master UI | http://localhost:8080 | — |
+| Spark Master UI | http://localhost:8080 | - |
 
 ### 5. Verify Kafka topics exist
 
@@ -226,11 +226,11 @@ In the Airflow UI at http://localhost:8081, enable and manually trigger `stock_m
 ### 8. Run the streaming pipeline (separately)
 
 ```bash
-# In one terminal — stream producer
+# In one terminal - stream producer
 cd src/kafka/producer
 python stream_data_producer.py
 
-# In another terminal — realtime consumer
+# In another terminal - realtime consumer
 cd src/kafka/consumer
 python realtime_data_consumer.py
 ```
@@ -283,7 +283,7 @@ Calls AlphaVantage `TIME_SERIES_DAILY` once per stock and publishes historical O
 - Filters the response to only the Airflow execution date (`{{ ds }}`) making each DAG run idempotent
 - Falls back to the most recent available trading day if the execution date is a weekend or holiday
 - Enforces a **12-second delay** between API calls to stay within the 5 calls/minute free-tier limit
-- Calls `producer.flush()` before exiting — guaranteeing all messages are durably written to Kafka before the consumer task starts
+- Calls `producer.flush()` before exiting - guaranteeing all messages are durably written to Kafka before the consumer task starts
 
 ```python
 # Rate limit: 5 calls/minute → 12s between calls
@@ -293,7 +293,7 @@ if i < len(STOCKS) - 1:
 
 ![Batch Producer Starting](img/batch_data_producer.png)
 
-![Batch Producer Complete — 10 stocks, 251 records produced](img/batch_data_producer-1.png)
+![Batch Producer Complete - 10 stocks, 251 records produced](img/batch_data_producer-1.png)
 
 ---
 
@@ -302,7 +302,7 @@ if i < len(STOCKS) - 1:
 Calls AlphaVantage `GLOBAL_QUOTE` continuously, rotating through 8 stocks and publishing live price snapshots to the `stock-market-realtime` topic.
 
 **Key design decisions:**
-- Uses `GLOBAL_QUOTE` (not `TIME_SERIES_DAILY`) — the lightest, lowest-latency AlphaVantage endpoint
+- Uses `GLOBAL_QUOTE` (not `TIME_SERIES_DAILY`) - the lightest, lowest-latency AlphaVantage endpoint
 - Tracks previous prices internally to emit `change` and `percent_change` between polling cycles
 - **Free-tier budget management**: 8 stocks × 1 call = 8 calls per cycle. With 25 calls/day budget → 3 full cycles/day maximum → ~8-hour gap enforced between cycles via `CYCLE_INTERVAL_SECONDS`
 
@@ -338,7 +338,7 @@ MinIO path: raw/historical/year=YYYY/month=MM/day=DD/{SYMBOL}_{timestamp}.csv
 Reads from `stock-market-realtime`, buffers messages in memory, and flushes to MinIO as a single CSV when either 100 messages accumulate or 60 seconds elapse.
 
 **Key design decisions:**
-- **Conditional buffer flush**: buffer and Kafka offsets are only reset on a **successful** MinIO write. If the S3 write fails, messages are retained for the next flush cycle — preventing silent data loss.
+- **Conditional buffer flush**: buffer and Kafka offsets are only reset on a **successful** MinIO write. If the S3 write fails, messages are retained for the next flush cycle - preventing silent data loss.
 - **Graceful shutdown flush**: on `KeyboardInterrupt`, any remaining buffered messages are flushed to MinIO before the consumer closes.
 - **Hour-level partitioning** makes data queryable by time window for Spark Structured Streaming.
 
@@ -378,23 +378,23 @@ spark_conf.set("fs.s3a.path.style.access", "true")
 spark_conf.set("fs.s3a.impl",              "org.apache.hadoop.fs.s3a.S3AFileSystem")
 ```
 
-**Output — `inferSchema=True` vs without:**
+**Output - `inferSchema=True` vs without:**
 
-Without `inferSchema`, Spark reads all columns as strings — unusable for numeric aggregations:
+Without `inferSchema`, Spark reads all columns as strings - unusable for numeric aggregations:
 
-![Without inferSchema — all columns are strings](img/without_inferschema.png)
+![Without inferSchema - all columns are strings](img/without_inferschema.png)
 
-With `inferSchema=True`, Spark correctly infers numeric types — window aggregations work correctly:
+With `inferSchema=True`, Spark correctly infers numeric types - window aggregations work correctly:
 
-![With inferSchema — correct types inferred](img/with_inferschema.png)
+![With inferSchema - correct types inferred](img/with_inferschema.png)
 
-**Processed output — daily OHLCV metrics in Spark:**
+**Processed output - daily OHLCV metrics in Spark:**
 
 ![Spark batch metrics output](img/metrics.png)
 
-**Processed Parquet files in MinIO — partitioned by symbol:**
+**Processed Parquet files in MinIO - partitioned by symbol:**
 
-![MinIO processed data — 10 symbol partitions](img/processed_batchdata.png)
+![MinIO processed data - 10 symbol partitions](img/processed_batchdata.png)
 
 ---
 
@@ -451,7 +451,7 @@ fetch_historical_data >> consume_historical_data >> process_data >> load_to_snow
 
 **All five tasks succeeding:**
 
-![Airflow DAG — all tasks green](img/dag.png)
+![Airflow DAG - all tasks green](img/dag.png)
 
 **DAG run history and duration:**
 
@@ -493,7 +493,7 @@ Step 3: MERGE INTO target USING staging ON (symbol, date)
 
 **Why `write_pandas` instead of `executemany`:**
 
-`write_pandas` from `snowflake.connector.pandas_tools` uses Snowflake's internal PUT/COPY path — it compresses the DataFrame into a Parquet file, uploads it to Snowflake's internal stage, and issues a bulk `COPY INTO`. This is orders of magnitude faster than row-by-row `executemany` inserts for any real volume.
+`write_pandas` from `snowflake.connector.pandas_tools` uses Snowflake's internal PUT/COPY path - it compresses the DataFrame into a Parquet file, uploads it to Snowflake's internal stage, and issues a bulk `COPY INTO`. This is orders of magnitude faster than row-by-row `executemany` inserts for any real volume.
 
 **Symbol extraction from Spark partition paths:**
 
@@ -507,7 +507,7 @@ for segment in key.split("/"):
 df["symbol"] = symbol   # inject back as a column
 ```
 
-**Snowflake table — 86 rows of AAPL daily metrics loaded:**
+**Snowflake table - 86 rows of AAPL daily metrics loaded:**
 
 ![Snowflake DAILY_STOCK_METRICS table](img/snowflake.png)
 
@@ -536,14 +536,14 @@ CREATE TABLE IF NOT EXISTS STOCKMARKETBATCH.PUBLIC.DAILY_STOCK_METRICS (
 | Decision | Rationale |
 |---|---|
 | AlphaVantage over yfinance | Real API with rate limits simulates production constraints; yfinance is unofficial and unreliable |
-| Kafka between producer and consumer | Fault tolerance and replay — consumer can crash and recover without re-calling the API |
-| Manual Kafka offset commit | Ensures exactly-once delivery semantics — offsets only advance after data is safely in MinIO |
-| `write_pandas` over `executemany` | PUT/COPY is Snowflake's native bulk load path — orders of magnitude faster than row-by-row inserts |
+| Kafka between producer and consumer | Fault tolerance and replay - consumer can crash and recover without re-calling the API |
+| Manual Kafka offset commit | Ensures exactly-once delivery semantics - offsets only advance after data is safely in MinIO |
+| `write_pandas` over `executemany` | PUT/COPY is Snowflake's native bulk load path - orders of magnitude faster than row-by-row inserts |
 | MERGE upsert strategy | Re-running the pipeline for the same date updates rows rather than duplicating them |
 | `pd.Timestamp.now()` over `datetime.now()` | Produces `datetime64[ns]` dtype that Parquet serialises correctly into Snowflake TIMESTAMP |
-| Streaming pipeline outside Airflow | Streaming jobs run indefinitely — BashOperator tasks must terminate; the two models are incompatible |
+| Streaming pipeline outside Airflow | Streaming jobs run indefinitely - BashOperator tasks must terminate; the two models are incompatible |
 | `catchup=False` in DAG | Prevents Airflow from backfilling every day since `start_date`, which would exhaust the API quota |
-| Docker service names in container config | `kafka:9092`, `minio:9000` — not `localhost` — because containers resolve hostnames via Docker's internal DNS |
+| Docker service names in container config | `kafka:9092`, `minio:9000` - not `localhost` - because containers resolve hostnames via Docker's internal DNS |
 
 ---
 
@@ -555,5 +555,3 @@ CREATE TABLE IF NOT EXISTS STOCKMARKETBATCH.PUBLIC.DAILY_STOCK_METRICS (
 <p align="center">
   <sub>Animated icons by <a href="https://www.flaticon.com/free-animated-icons/stock-market" title="stock market animated icons">Stock market animated icons created by Freepik - Flaticon</a></sub>
 </p>
-
-
